@@ -93,7 +93,7 @@ class ViTEncoder(nn.Module):
         if vit_type == "vit_base_patch16_224":
             self.fc = nn.Linear(768, output_dim)
 
-        self.image_bn = nn.BatchNorm1d(output_dim)  # 对提取的图像特征进行归一化
+        self.image_ln = nn.LayerNorm(output_dim)  # 对提取的图像特征进行归一化
 
         # 冻结所有ViT的参数
         for param in self.vit_model.parameters():
@@ -112,7 +112,7 @@ class ViTEncoder(nn.Module):
                 img = x[:, i, :, :, :]  # 选择当前样本的所有图像
                 feature = self.vit_model(img)  # 提取特征
                 feature = self.fc(feature)  # 将特征变换为指定维度
-                feature = self.image_bn(feature)  # 对图像特征进行归一化
+                feature = self.image_ln(feature)  # 对图像特征进行归一化
                 feature = self.relu(feature)
                 features.append(feature)
 
@@ -121,7 +121,7 @@ class ViTEncoder(nn.Module):
         else:
             x = self.vit_model(x)  # 输出是768维
             x = self.fc(x)
-            features = self.image_bn(x)
+            features = self.image_ln(x)
             features = self.relu(features)
             features = features.unsqueeze(2)
         return features
@@ -143,7 +143,7 @@ class ViTEncoder2(nn.Module):
         if vit_type == "vit_base_patch16_224":
             self.fc = nn.Linear(768, output_dim)
 
-        self.image_bn = nn.BatchNorm1d(output_dim)  # 对提取的图像特征进行归一化
+        self.image_ln = nn.LayerNorm(output_dim)  # 对提取的图像特征进行归一化
 
         if weight_path is not None and os.path.exists(weight_path):
             self._load_weights(weight_path)
@@ -176,7 +176,7 @@ class ViTEncoder2(nn.Module):
                 img = x[:, i, :, :, :]  # 选择当前样本的所有图像
                 feature = self.vit_model(img)  # 提取特征
                 feature = self.fc(feature)  # 将特征变换为指定维度
-                feature = self.image_bn(feature)  # 对图像特征进行归一化
+                feature = self.image_ln(feature)  # 对图像特征进行归一化
                 feature = self.relu(feature)
                 features.append(feature)
 
@@ -185,7 +185,7 @@ class ViTEncoder2(nn.Module):
         else:
             x = self.vit_model(x)  # 输出是768维
             x = self.fc(x)
-            features = self.image_bn(x)
+            features = self.image_ln(x)
             features = self.relu(features)
             features = features.unsqueeze(2)
         return features  # 输出维度768
@@ -211,7 +211,7 @@ class ResNetEncoder(nn.Module):
         elif resnet_type in ["resnet50", "resnet101", "resnet152"]:
             self.fc = nn.Linear(2048, output_dim)
 
-        self.image_bn = nn.BatchNorm1d(output_dim)  # 对提取的图像特征进行归一化
+        self.image_ln = nn.LayerNorm(output_dim)  # 对提取的图像特征进行归一化
 
         if weight_path is not None and os.path.exists(weight_path):
             self._load_weights(weight_path)
@@ -244,7 +244,7 @@ class ResNetEncoder(nn.Module):
                 img = x[:, i, :, :, :]  # 选择当前样本的所有图像
                 feature = self.resnet_model(img)  # 提取特征
                 feature = self.fc(feature)  # 将特征变换为指定维度
-                feature = self.image_bn(feature)  # 对图像特征进行归一化
+                feature = self.image_ln(feature)  # 对图像特征进行归一化
                 features.append(feature)
 
             # 在第三个维度上拼接所有图像的特征
@@ -252,7 +252,7 @@ class ResNetEncoder(nn.Module):
         else:
             x = self.resnet_model(x)  # 输出是2048维
             x = self.fc(x)
-            features = self.image_bn(x)
+            features = self.image_ln(x)
             features = self.relu(features)
             features = features.unsqueeze(2)
         return features  # 输出维度output_dim
