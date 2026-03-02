@@ -105,19 +105,15 @@ class ViTEncoder(nn.Module):
         输出：x (batch_size, num_images, output_dim)
         """
         if self.image_method in ["log_curve","wave_trans","gaf_trans"]:
-            batch_size, channel, _, _, _ = x.shape
-            features = []
-
-            for i in range(channel):
-                img = x[:, i, :, :, :]  # 选择当前样本的所有图像
-                feature = self.vit_model(img)  # 提取特征
-                feature = self.fc(feature)  # 将特征变换为指定维度
-                feature = self.image_ln(feature)  # 对图像特征进行归一化
-                feature = self.relu(feature)
-                features.append(feature)
-
-            # 在第三个维度上拼接所有图像的特征
-            features = torch.stack(features, dim=2)  # (batch_size, num_images, output_dim)
+            batch_size, num_images, C, H, W = x.shape
+            x_reshaped = x.view(-1, C, H, W)  # (batch_size*num_images, C, H, W)
+            all_features = self.vit_model(x_reshaped)  # (batch_size*num_images, vit_feat_dim)
+            all_features = all_features.contiguous().view(batch_size, num_images, -1)  # (batch_size, num_images, vit_feat_dim)
+            # 投影到目标维度
+            features = self.fc(all_features)
+            features = self.image_ln(features)
+            features = self.relu(features)  # (batch_size, num_images, output_dim)
+            features = features.transpose(1, 2)
         else:
             x = self.vit_model(x)  # 输出是768维
             x = self.fc(x)
@@ -169,19 +165,15 @@ class ViTEncoder2(nn.Module):
         输出：x (batch_size, num_images, output_dim)
         """
         if self.image_method in ["log_curve", "wave_trans","gaf_trans"]:
-            batch_size, channel, _, _, _ = x.shape
-            features = []
-
-            for i in range(channel):
-                img = x[:, i, :, :, :]  # 选择当前样本的所有图像
-                feature = self.vit_model(img)  # 提取特征
-                feature = self.fc(feature)  # 将特征变换为指定维度
-                feature = self.image_ln(feature)  # 对图像特征进行归一化
-                feature = self.relu(feature)
-                features.append(feature)
-
-            # 在第三个维度上拼接所有图像的特征
-            features = torch.stack(features, dim=2)  # (batch_size, num_images, output_dim)
+            batch_size, num_images, C, H, W = x.shape
+            x_reshaped = x.view(-1, C, H, W)  # (batch_size*num_images, C, H, W)
+            all_features = self.vit_model(x_reshaped)  # (batch_size*num_images, vit_feat_dim)
+            all_features = all_features.contiguous().view(batch_size, num_images, -1)  # (batch_size, num_images, vit_feat_dim)
+            # 投影到目标维度
+            features = self.fc(all_features)
+            features = self.image_ln(features)
+            features = self.relu(features) # (batch_size, num_images, output_dim)
+            features = features.transpose(1, 2)
         else:
             x = self.vit_model(x)  # 输出是768维
             x = self.fc(x)
@@ -237,18 +229,15 @@ class ResNetEncoder(nn.Module):
         输出：x (batch_size, num_images, output_dim)
         """
         if self.image_method in ["log_curve", "wave_trans", "gaf_trans"]:
-            batch_size, channel, _, _, _ = x.shape
-            features = []
-
-            for i in range(channel):
-                img = x[:, i, :, :, :]  # 选择当前样本的所有图像
-                feature = self.resnet_model(img)  # 提取特征
-                feature = self.fc(feature)  # 将特征变换为指定维度
-                feature = self.image_ln(feature)  # 对图像特征进行归一化
-                features.append(feature)
-
-            # 在第三个维度上拼接所有图像的特征
-            features = torch.stack(features, dim=2)  # (batch_size, num_images, output_dim)
+            batch_size, num_images, C, H, W = x.shape
+            x_reshaped = x.view(-1, C, H, W)  # (batch_size*num_images, C, H, W)
+            all_features = self.resnet_model(x_reshaped)  # (batch_size*num_images, vit_feat_dim)
+            all_features = all_features.contiguous().view(batch_size, num_images, -1)  # (batch_size, num_images, vit_feat_dim)
+            # 投影到目标维度
+            features = self.fc(all_features)
+            features = self.image_ln(features)
+            features = self.relu(features)  # (batch_size, num_images, output_dim)
+            features = features.transpose(1, 2)
         else:
             x = self.resnet_model(x)  # 输出是2048维
             x = self.fc(x)
